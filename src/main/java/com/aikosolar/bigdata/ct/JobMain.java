@@ -4,6 +4,10 @@ import com.aikosolar.bigdata.ct.sink.SinkHbase;
 import com.aikosolar.bigdata.ct.util.MapUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.functions.*;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -27,6 +31,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
+
 /**
  * 按照新改的数据格式，做etl清洗
  * 1. 实时计算ct时间，存储到hbase中 yw_data_df_online_dt
@@ -42,8 +48,9 @@ public class JobMain {
 
     public static ParameterTool parameterTool = null;
 
-    public static final ObjectMapper mapper = new ObjectMapper();
-
+    /**
+     * 加载属性配置文件
+     **/
     static {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         InputStream inputStream = classLoader
@@ -55,6 +62,27 @@ public class JobMain {
             System.err.println("加载配置文件失败, properties file path " + PROPERTIES_FILE_PATH);
             System.exit(1);
         }
+    }
+
+    public static final ObjectMapper mapper = new ObjectMapper();
+
+    /**
+     * 配置jackson配置
+     **/
+    static {
+        // 该特性决定了当遇到未知属性（没有映射到属性，没有任何setter或者任何可以处理它的handler），是否应该抛出一个JsonMappingException异常
+        mapper.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
+        //在序列化时日期格式默认为 yyyy-MM-dd'T'HH:mm:ss.SSSZ
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        //在序列化时忽略值为 null 的属性
+        mapper.setSerializationInclusion(Include.NON_NULL);
+        //忽略值为默认值的属性
+        mapper.setDefaultPropertyInclusion(Include.NON_DEFAULT);
+        //设置JSON时间格式
+        mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+        //对于日期类型为 java.time.LocalDate，还需要添加代码 mapper.registerModule(new JavaTimeModule())，同时添加相应的依赖 jar 包
+        mapper.registerModule(new JavaTimeModule());
     }
 
     public static Map<String, Map<Integer, Long>> tubeRunCountTestTimeMap = new ConcurrentHashMap<>(6);
@@ -118,17 +146,51 @@ public class JobMain {
         DataStream<String> kafkaDataStream = env.addSource(flinkKafkaConsumer)
                 .uid(etlSourceTopic)
                 .name(etlSourceTopic)
-                .setParallelism(11);
+                .setParallelism(3);
 
         // 5. 打印数据
         SingleOutputStreamOperator<EqpCTSource2> tubeChangeStateDS = kafkaDataStream.map(x -> {
+            //分区字段
+            final SimpleDateFormat defaultSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            final SimpleDateFormat utcSdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+            final SimpleDateFormat dayDateSdf = new SimpleDateFormat("yyyy-MM-dd");
+            final SimpleDateFormat hourSdf = new SimpleDateFormat("yyyy-MM-dd HH:00:00");
+
             JsonNode jn = mapper.readTree(x);
             EqpCTSource eqpCTSource = new EqpCTSource();
             JsonNode jnData = jn.get("data");
+            // 若没有上传eqp_id，则默认为HALM00A设备
+            final String eqpId = jnData.path("eqp_id").asText("Z2-HALM00A");
+            final String site = eqpId.split("-")[0];
+            eqpCTSource.site = site;
+
             String testDate = jnData.get("TestDate").asText("01-01-1970");
             String testTime = jnData.get("TestTime").asText("00:00:00");
             testTime = String.format("%s %s", testDate, testTime);
-            eqpCTSource.dayHour = jnData.get("").asText();
+            Date testDateTime = utcSdf.parse(testTime);
+            // 广东7:30-19:30为白班，浙江和添加8:00-20:00为白班，其余为晚班
+            // 班次时间=testTime-8小时
+            Calendar calendar = Calendar.getInstance();
+            Date shiftDateTime = null;
+            if (StringUtils.startsWith(site, "G")) {
+                calendar.setTime(testDateTime);
+                calendar.add(Calendar.HOUR_OF_DAY, -7);
+                calendar.add(Calendar.MINUTE, -30);
+                shiftDateTime = calendar.getTime();
+            } else {
+                calendar.setTime(testDateTime);
+                calendar.add(Calendar.HOUR_OF_DAY, -8);
+                shiftDateTime = calendar.getTime();
+            }
+            if (calendar.get(Calendar.HOUR_OF_DAY) < 12) {
+                eqpCTSource.shift = String.format("%s-D", dayDateSdf.format(shiftDateTime));
+            } else {
+                eqpCTSource.shift = String.format("%s-N", dayDateSdf.format(shiftDateTime));
+            }
+            testTime = defaultSdf.format(testDateTime);
+            eqpCTSource.createTime = testTime;
+            eqpCTSource.dayDate = dayDateSdf.format(testDateTime);
+            eqpCTSource.dayHour = hourSdf.format(testDateTime);
         })
                 .name("df-map-string-to-jsonObject")
                 .uid("df-map-string-to-jsonObject")

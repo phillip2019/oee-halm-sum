@@ -5,39 +5,41 @@ package com.aikosolar.bigdata.ct;
   * @version v1.0.0
   */
 
+import java.io.Serializable;
+
 /**
   * ct设备原始数据
   */
-public class EqpCTSource {
+public class EqpCTSource implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-
+  public String rowKey = "";
+  public String site = "Z2";
+  public String shift = "";
   public String dayDate = "";
   public String dayHour = "";
   public String twoHour = "";
   public String halfHour = "";
-//  public String createTime = "";
+  public String createTime = "";
   public String eqpId = "";
-  public String shift = "";
-  public String site = "Z2";
   public String comments = "";
   public String orderType = "NORMAL";
   public String binType = "OTHER";
   public Integer output = 0;
   public Integer output2 = 0;
-  public Integer uoc = 0;
-  public Integer isc = 0;
-  public Integer ff = 0;
-  public Integer eta = 0;
-  public Integer m3Eta = 0;
-  public Integer irev2 = 0;
-  public Integer rser = 0;
-  public Integer rshunt = 0;
-  public Integer tcell = 0;
-  public Integer tmonicell = 0;
-  public Integer insolM1 = 0;
-  public Integer m3Insol = 0;
+  public Double uoc = 0D;
+  public Double isc = 0D;
+  public Double ff = 0D;
+  public Double eta = 0D;
+  public Double m3Eta = 0D;
+  public Double irev2 = 0D;
+  public Double rser = 0D;
+  public Double rshunt = 0D;
+  public Double tcell = 0D;
+  public Double tmonicell = 0D;
+  public Double insolM1 = 0D;
+  public Double m3Insol = 0D;
   public Integer numA = 0;
   public Integer numZhengmianyichang = 0;
   public Integer numBeimianyichang = 0;
@@ -93,6 +95,31 @@ public class EqpCTSource {
   public Integer num239 = 0;
   public Integer num240 = 0;
 
+
+  public String getRowKey() {
+    return rowKey;
+  }
+
+  public void setRowKey(String rowKey) {
+    this.rowKey = rowKey;
+  }
+
+  public String getSite() {
+    return site;
+  }
+
+  public void setSite(String site) {
+    this.site = site;
+  }
+
+  public String getShift() {
+    return shift;
+  }
+
+  public void setShift(String shift) {
+    this.shift = shift;
+  }
+
   public String getDayDate() {
     return dayDate;
   }
@@ -125,28 +152,20 @@ public class EqpCTSource {
     this.halfHour = halfHour;
   }
 
+  public String getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(String createTime) {
+    this.createTime = createTime;
+  }
+
   public String getEqpId() {
     return eqpId;
   }
 
   public void setEqpId(String eqpId) {
     this.eqpId = eqpId;
-  }
-
-  public String getShift() {
-    return shift;
-  }
-
-  public void setShift(String shift) {
-    this.shift = shift;
-  }
-
-  public String getSite() {
-    return site;
-  }
-
-  public void setSite(String site) {
-    this.site = site;
   }
 
   public String getComments() {
@@ -189,99 +208,99 @@ public class EqpCTSource {
     this.output2 = output2;
   }
 
-  public Integer getUoc() {
+  public Double getUoc() {
     return uoc;
   }
 
-  public void setUoc(Integer uoc) {
+  public void setUoc(Double uoc) {
     this.uoc = uoc;
   }
 
-  public Integer getIsc() {
+  public Double getIsc() {
     return isc;
   }
 
-  public void setIsc(Integer isc) {
+  public void setIsc(Double isc) {
     this.isc = isc;
   }
 
-  public Integer getFf() {
+  public Double getFf() {
     return ff;
   }
 
-  public void setFf(Integer ff) {
+  public void setFf(Double ff) {
     this.ff = ff;
   }
 
-  public Integer getEta() {
+  public Double getEta() {
     return eta;
   }
 
-  public void setEta(Integer eta) {
+  public void setEta(Double eta) {
     this.eta = eta;
   }
 
-  public Integer getM3Eta() {
+  public Double getM3Eta() {
     return m3Eta;
   }
 
-  public void setM3Eta(Integer m3Eta) {
+  public void setM3Eta(Double m3Eta) {
     this.m3Eta = m3Eta;
   }
 
-  public Integer getIrev2() {
+  public Double getIrev2() {
     return irev2;
   }
 
-  public void setIrev2(Integer irev2) {
+  public void setIrev2(Double irev2) {
     this.irev2 = irev2;
   }
 
-  public Integer getRser() {
+  public Double getRser() {
     return rser;
   }
 
-  public void setRser(Integer rser) {
+  public void setRser(Double rser) {
     this.rser = rser;
   }
 
-  public Integer getRshunt() {
+  public Double getRshunt() {
     return rshunt;
   }
 
-  public void setRshunt(Integer rshunt) {
+  public void setRshunt(Double rshunt) {
     this.rshunt = rshunt;
   }
 
-  public Integer getTcell() {
+  public Double getTcell() {
     return tcell;
   }
 
-  public void setTcell(Integer tcell) {
+  public void setTcell(Double tcell) {
     this.tcell = tcell;
   }
 
-  public Integer getTmonicell() {
+  public Double getTmonicell() {
     return tmonicell;
   }
 
-  public void setTmonicell(Integer tmonicell) {
+  public void setTmonicell(Double tmonicell) {
     this.tmonicell = tmonicell;
   }
 
-  public Integer getInsolM1() {
+  public Double getInsolM1() {
     return insolM1;
   }
 
-  public void setInsolM1(Integer insolM1) {
+  public void setInsolM1(Double insolM1) {
     this.insolM1 = insolM1;
   }
 
-  public Integer getM3Insol() {
+  public Double getM3Insol() {
     return m3Insol;
   }
 
-  public void setM3Insol(Integer m3Insol) {
+  public void setM3Insol(Double m3Insol) {
     this.m3Insol = m3Insol;
   }
 
@@ -720,13 +739,15 @@ public class EqpCTSource {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("EqpCTSource{");
-    sb.append("dayDate='").append(dayDate).append('\'');
+    sb.append("rowKey='").append(rowKey).append('\'');
+    sb.append("site='").append(site).append('\'');
+    sb.append(", shift='").append(shift).append('\'');
+    sb.append(", dayDate='").append(dayDate).append('\'');
     sb.append(", dayHour='").append(dayHour).append('\'');
     sb.append(", twoHour='").append(twoHour).append('\'');
     sb.append(", halfHour='").append(halfHour).append('\'');
+    sb.append(", createTime='").append(createTime).append('\'');
     sb.append(", eqpId='").append(eqpId).append('\'');
-    sb.append(", shift='").append(shift).append('\'');
-    sb.append(", site='").append(site).append('\'');
     sb.append(", comments='").append(comments).append('\'');
     sb.append(", orderType='").append(orderType).append('\'');
     sb.append(", binType='").append(binType).append('\'');
