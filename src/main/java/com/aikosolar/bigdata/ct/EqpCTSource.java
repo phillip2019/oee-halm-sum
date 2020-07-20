@@ -5,7 +5,10 @@ package com.aikosolar.bigdata.ct;
   * @version v1.0.0
   */
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
   * ct设备原始数据
@@ -26,7 +29,7 @@ public class EqpCTSource implements Serializable {
   public String comments = "";
   public String orderType = "NORMAL";
   public String binType = "OTHER";
-  public Integer output = 0;
+  public Integer output = 1;
   public Integer output2 = 0;
   public Double uoc = 0D;
   public Double isc = 0D;
@@ -821,5 +824,9 @@ public class EqpCTSource implements Serializable {
     sb.append(", num240=").append(num240);
     sb.append('}');
     return sb.toString();
+  }
+
+  public static void main(String[] args) throws NoSuchMethodException {
+    Method m = EqpCTSource.class.getDeclaredMethod(String.format("set%s", StringUtils.capitalize("num240")), Integer.class);
   }
 }

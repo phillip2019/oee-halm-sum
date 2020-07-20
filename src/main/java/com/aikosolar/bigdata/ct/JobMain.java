@@ -1,17 +1,18 @@
 package com.aikosolar.bigdata.ct;
 
-import com.aikosolar.bigdata.ct.sink.SinkHbase;
-import com.aikosolar.bigdata.ct.util.MapUtil;
+import com.aikosolar.bigdata.ct.sink.CTSinkHBase;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.functions.*;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.tuple.Tuple23;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
@@ -21,12 +22,14 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,9 +38,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 
 /**
  * 按照新改的数据格式，做etl清洗
- * 1. 实时计算ct时间，存储到hbase中 yw_data_df_online_dt
- * 2. 离线计算ct时间，每天晚上凌晨计算，计算完成之后清理 yw_data_df_offline_dt
- *                  每天晚上凌晨1点计算，计算完成之后清理 yw_data_df_offline_backup_dt 备库
  * @author xiaowei.song
  */
 public class JobMain {
@@ -65,6 +65,63 @@ public class JobMain {
     }
 
     public static final ObjectMapper mapper = new ObjectMapper();
+
+    /**
+     * 订单类型映射表
+     **/
+    public static final Map<String, String> ORDER_TYPE_MAP = ImmutableMap.<String, String>builder()
+            .put("yp", "YP")
+            .put("pl", "PL")
+            .put("by", "BY")
+            .put("yz", "YZ")
+            .put("ly", "LY")
+            .put("cfx", "CFX")
+            .put("cc", "CC")
+            .put("gsq", "GSQ")
+            .put("gsh", "GSH")
+            .put("cid", "CID")
+            .build();
+
+    public static final Map<String, Range<Double>> ETA_GRADE_MAP = ImmutableMap.<String, Range<Double>>builder()
+            .put("num213", Range.closedOpen(00.00D, 00.00D))
+            .put("num214", Range.closedOpen(00.00D, 00.00D))
+            .put("num215", Range.closedOpen(00.00D, 00.00D))
+            .put("num216", Range.closedOpen(00.00D, 00.00D))
+            .put("num217", Range.closedOpen(00.00D, 00.00D))
+            .put("num218", Range.closedOpen(00.00D, 21.95D))
+            .put("num219", Range.closedOpen(21.95D, 22.06D))
+            .put("num220", Range.closedOpen(22.06D, 22.16D))
+            .put("num221", Range.closedOpen(22.16D, 22.27D))
+            .put("num222", Range.closedOpen(22.27D, 22.37D))
+            .put("num223", Range.closedOpen(22.37D, 22.48D))
+            .put("num224", Range.closedOpen(22.48D, 22.58D))
+            .put("num225", Range.closedOpen(22.58D, 22.69D))
+            .put("num226", Range.closedOpen(22.69D, 22.79D))
+            .put("num227", Range.closedOpen(22.79D, 22.79D))
+            .put("num228", Range.closedOpen(22.79D, 22.79D))
+            .put("num229", Range.closedOpen(00.00D, 00.00D))
+            .put("num230", Range.closedOpen(00.00D, 00.00D))
+            .put("num231", Range.closedOpen(00.00D, 00.00D))
+            .put("num232", Range.closedOpen(00.00D, 00.00D))
+            .put("num233", Range.closedOpen(00.00D, 00.00D))
+            .put("num234", Range.closedOpen(00.00D, 00.00D))
+            .put("num235", Range.closedOpen(00.00D, 00.00D))
+            .put("num236", Range.closedOpen(00.00D, 00.00D))
+            .put("num237", Range.closedOpen(00.00D, 00.00D))
+            .put("num238", Range.closedOpen(00.00D, 00.00D))
+            .put("num239", Range.closedOpen(00.00D, 00.00D))
+            .put("num240", Range.closedOpen(00.00D, 00.00D))
+            .build();
+
+    public static final Map<String, Method> EQP_CT_SOURCE_METHOD = new HashMap<>();
+    static {
+        // 获去对象对应的类
+        Class clazz = EqpCTSource.class;
+        Method[] invokableSourceList = clazz.getMethods();
+        for (Method method : invokableSourceList) {
+            EQP_CT_SOURCE_METHOD.put(method.getName(), method);
+        }
+    }
 
     /**
      * 配置jackson配置
@@ -149,12 +206,13 @@ public class JobMain {
                 .setParallelism(3);
 
         // 5. 打印数据
-        SingleOutputStreamOperator<EqpCTSource2> tubeChangeStateDS = kafkaDataStream.map(x -> {
+        SingleOutputStreamOperator<EqpCTSource> eqpCTSourceDS = kafkaDataStream.map(x -> {
             //分区字段
             final SimpleDateFormat defaultSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             final SimpleDateFormat utcSdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
             final SimpleDateFormat dayDateSdf = new SimpleDateFormat("yyyy-MM-dd");
             final SimpleDateFormat hourSdf = new SimpleDateFormat("yyyy-MM-dd HH:00:00");
+            final SimpleDateFormat hourSdf2 = new SimpleDateFormat("yyyy-MM-dd HH:30:00");
 
             JsonNode jn = mapper.readTree(x);
             EqpCTSource eqpCTSource = new EqpCTSource();
@@ -165,6 +223,7 @@ public class JobMain {
             eqpCTSource.site = site;
 
             String testDate = jnData.get("TestDate").asText("01-01-1970");
+            String testTimeSource = jnData.get("TestTime").asText("00:00:00");
             String testTime = jnData.get("TestTime").asText("00:00:00");
             testTime = String.format("%s %s", testDate, testTime);
             Date testDateTime = utcSdf.parse(testTime);
@@ -191,209 +250,241 @@ public class JobMain {
             eqpCTSource.createTime = testTime;
             eqpCTSource.dayDate = dayDateSdf.format(testDateTime);
             eqpCTSource.dayHour = hourSdf.format(testDateTime);
+            // 计算两小时的数据
+            Calendar testTimeCalendar = Calendar.getInstance();
+            testTimeCalendar.setTime(testDateTime);
+            if (testTimeCalendar.get(Calendar.HOUR_OF_DAY) % 2 == 1) {
+                testTimeCalendar.add(Calendar.HOUR_OF_DAY, -1);
+            }
+            eqpCTSource.twoHour = defaultSdf.format(testTimeCalendar.getTime());
+
+            // 恢复时间
+            testTimeCalendar.setTime(testDateTime);
+            if (testTimeCalendar.get(Calendar.MINUTE) > 30) {
+                eqpCTSource.halfHour = hourSdf2.format(testDateTime);
+            } else {
+                eqpCTSource.halfHour = hourSdf.format(testDateTime);
+            }
+            String comment = jnData.get("Comment").asText("");
+            eqpCTSource.comments = comment;
+            for (Map.Entry<String, String> entry : ORDER_TYPE_MAP.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (StringUtils.containsIgnoreCase(comment, key)) {
+                    eqpCTSource.orderType = value;
+                    break;
+                }
+            }
+            String bin = jnData.get("BIN").asText("");
+            List<Integer> abnormalBinList = ImmutableList.of(0, 100);
+            if (abnormalBinList.stream().anyMatch(bin::equals)) {
+                eqpCTSource.binType = bin;
+            }
+            if (!ImmutableList.of(1, 2, 107).stream().anyMatch(bin::equals)) {
+                eqpCTSource.output2 = 1;
+                eqpCTSource.uoc = jnData.get("UOC").asDouble(0D);
+                eqpCTSource.isc = jnData.get("ISC").asDouble(0D);
+                eqpCTSource.ff = jnData.get("FF").asDouble(0D);
+                eqpCTSource.eta = jnData.get("ETA").asDouble(0D);
+                eqpCTSource.m3Eta = jnData.get("M3_Eta").asDouble(0D);
+                eqpCTSource.irev2 = jnData.get("IRev2").asDouble(0D);
+                eqpCTSource.rser = jnData.get("Rser").asDouble(0D);
+                eqpCTSource.rshunt = jnData.get("Rshunt").asDouble(0D);
+                eqpCTSource.tcell = jnData.get("Tcell").asDouble(0D);
+                eqpCTSource.tmonicell = jnData.get("Tmonicell").asDouble(0D);
+                eqpCTSource.insolM1 = jnData.get("Insol_M1").asDouble(0D);
+                eqpCTSource.m3Insol = jnData.get("M3_Insol").asDouble(0D);
+            }
+
+            String binComment = jnData.get("BIN_COMMENT").asText();
+            if (StringUtils.isBlank(binComment)) {
+                eqpCTSource.numA = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "zhengmianyichang")) {
+                eqpCTSource.numZhengmianyichang = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "beimianyichang")) {
+                eqpCTSource.numBeimianyichang = 1;
+            } else if (StringUtils.containsIgnoreCase(binComment, "yanseyichang") || StringUtils.containsIgnoreCase(binComment, "yanseyichang_1")) {
+                eqpCTSource.numYanseyichang = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "yanseyichang_2")) {
+                eqpCTSource.numYanseyichang2 = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "MO5")) {
+                eqpCTSource.numMo5 = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "IREV2")) {
+                eqpCTSource.numIrev2 = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "RSH")) {
+                eqpCTSource.numRsh = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "DX")) {
+                eqpCTSource.numDx = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "duanshan")) {
+                eqpCTSource.numDuanshan = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "huashang")) {
+                eqpCTSource.numHuashang = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "heidian")) {
+                eqpCTSource.numHeidian = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "kexindu")) {
+                eqpCTSource.numKexindu = 1;
+            } else if (StringUtils.equalsIgnoreCase(binComment, "yinlie")) {
+                eqpCTSource.numYinlie = 1;
+            }
+
+            Integer aio2R = jnData.get("AOI_2_R").asInt(0);
+            switch (aio2R) {
+                case 1:
+                    eqpCTSource.numColorC = 1;
+                    eqpCTSource.numColorAll = 1;
+                    break;
+                case 2:
+                    eqpCTSource.numColorB = 1;
+                    eqpCTSource.numColorAll = 1;
+                    break;
+                case 3:
+                    eqpCTSource.numColorA = 1;
+                    eqpCTSource.numColorAll = 1;
+                    break;
+                default:
+                    break;
+            }
+            Integer el2FingerDefaultCount = jnData.get("EL2FINGERDEFAULTCOUNT").asInt(-1);
+            if (el2FingerDefaultCount >= 0) {
+                eqpCTSource.numDsAll = 1;
+                if (el2FingerDefaultCount == 0) {
+                    eqpCTSource.numDs0 = 1;
+                } else if (el2FingerDefaultCount == 1) {
+                    eqpCTSource.numDs1 = 1;
+                } else if (el2FingerDefaultCount == 2) {
+                    eqpCTSource.numDs2 = 1;
+                } else if (el2FingerDefaultCount == 3) {
+                    eqpCTSource.numDs3 = 1;
+                } else if (el2FingerDefaultCount == 4) {
+                    eqpCTSource.numDs4 = 1;
+                } else if (el2FingerDefaultCount == 5) {
+                    eqpCTSource.numDs5 = 1;
+                } else {
+                    eqpCTSource.numDs5p = 1;
+                }
+            }
+            Double eta = jnData.get("ETA").asDouble(-1D);
+            for (Map.Entry<String, Range<Double>> entry : ETA_GRADE_MAP.entrySet()) {
+                String grade = entry.getKey();
+                Range value = entry.getValue();
+                if (value.contains(eta)) {
+                    Method m = EQP_CT_SOURCE_METHOD.get(String.format("set%s", StringUtils.capitalize(grade)));
+                    m.invoke(eqpCTSource, Integer.valueOf(1));
+                }
+            }
+
+            eqpCTSource.rowKey = String.format("%s|%s|%s", testTimeSource, eqpId, testDateTime);
+            return eqpCTSource;
         })
-                .name("df-map-string-to-jsonObject")
-                .uid("df-map-string-to-jsonObject")
-                .map(new RichMapFunction<JSONObject, EqpCTSource2>() {
+        .name("ct-map-string-to-eqp-ct-source")
+        .uid("ct-map-string-to-eqp-ct-source");
+
+        SingleOutputStreamOperator<EqpCTSource> resultSos = eqpCTSourceDS
+                .keyBy("site",
+                        "shift",
+                        "eqpId",
+                        "dayDate",
+                        "dayHour",
+                        "twoHour",
+                        "halfHour",
+                        "binType",
+                        "orderType",
+                        "comments")
+                .timeWindow(Time.minutes(30))
+                .reduce(new ReduceFunction<EqpCTSource>() {
                     @Override
-                    public EqpCTSource2 map(JSONObject js) throws Exception {
-                        Map<String, String> suffixMap = new HashMap<>(7);
-                        HashMap<String, String> tube2BoatMap = new HashMap<>(12);
-                        //分区字段
-                        final SimpleDateFormat defaultSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        final SimpleDateFormat dsSdf = new SimpleDateFormat("yyyyMMdd");
-
-                        EqpCTSource2 tube = new EqpCTSource2();
-                        tube.eqpID = js.getOrDefault("EqpID", "").toString();
-                        // 默认site填充为浙江义乌二期
-                        tube.site = "Z2";
-                        if (StringUtils.isNotBlank(tube.eqpID)) {
-                            tube.site = StringUtils.split(tube.eqpID, "-")[0];
-                        }
-                        if (StringUtils.containsIgnoreCase(tube.eqpID, "-B")) {
-                            tube.eqpID = StringUtils.replace(tube.eqpID, "-B", "-");
-                        }
-
-                        tube.clock = js.getOrDefault("updatetime", "1970-01-01 00:00:00").toString();
-                        tube.tubeID = StringUtils.replace(js.getString("TubeID"), "Tube", "0");
-                        tube.tubeID = String.format("%02d", Integer.valueOf(tube.tubeID));
-                        Iterator<String> iterator = js.keySet().iterator();
-                        while (iterator.hasNext()) {
-                            String key = iterator.next();
-                            String value = js.getOrDefault(key, "").toString();
-                            if (StringUtils.startsWith(key, "Tube") && StringUtils.containsIgnoreCase(key, "Text")) {
-                                if (StringUtils.endsWith(key, "Text1")) {
-                                    tube.text1 = value;
-                                } else if (StringUtils.endsWith(key, "Text2")) {
-                                    tube.text2 = value;
-                                } else if (StringUtils.endsWith(key, "Text3")) {
-                                    tube.text3 = value;
-                                } else if (StringUtils.endsWith(key, "Text4")) {
-                                    tube.text4 = value;
-                                }
-                            } else if (StringUtils.startsWith(key, "Tube") && StringUtils.containsIgnoreCase(key, "State")) {
-                                tube.state = value;
-                            } else if (StringUtils.startsWith(key, "Tube") && StringUtils.containsIgnoreCase(key, "@")) {
-                                String keyNew = key.substring(key.indexOf("@") + 1);
-                                suffixMap.put(keyNew, value);
-                            } else if (StringUtils.startsWith(key, "Boat") && StringUtils.endsWith(key, "Tube%String")) {
-                                if (StringUtils.containsIgnoreCase(value, "-") && !StringUtils.equals(value, "-1")) {
-                                    String boatNo = StringUtils.split(key, "@")[0];
-                                    String boatIDKey = String.format("%s@BoatID%%String", boatNo);
-                                    String boatID = boatNo.replace("Boat", "");
-                                    if (js.containsKey(boatIDKey)) {
-                                        boatID = js.getString(boatIDKey);
-                                    }
-                                    value = StringUtils.split(value, "-")[1];
-                                    // 目前左右管区分不了，若之前已经存在舟记录，则逗号分隔，添加舟信息
-                                    if (tube2BoatMap.containsKey(value)) {
-                                        boatID = String.format("%s,%s", boatID, tube2BoatMap.get(value));
-                                    }
-                                    tube2BoatMap.put(value, boatID);
-                                }
-                            }
-                        }
-                        tube.boatID = tube2BoatMap.getOrDefault(js.getString("TubeID").replace("Tube", ""), "-1");
-                        tube.gasN2_POCl3VolumeAct = Double.valueOf(MapUtil.getValueOrDefault( suffixMap, "Gas@N2_POCl3@VolumeAct%Double", "-100"));
-                        tube.gasPOClBubbLeve = Double.valueOf(MapUtil.getValueOrDefault( suffixMap, "Gas@POClBubb@Level%Float", "-100"));
-                        tube.gasPOClBubbTempAct = Double.valueOf(MapUtil.getValueOrDefault( suffixMap, "Gas@POClBubb@TempAct%Float", "-100"));
-                        tube.dataVarAllRunCount = Double.valueOf(MapUtil.getValueOrDefault( suffixMap, "DataVar@All@RunCount%Double", "-100")).intValue();
-                        // 兼容runCount单独情况
-                        if (suffixMap.get("DataVar@All@RunCount%Double") == null) {
-                            String runCountStr = js.getString("RunCount");
-                            runCountStr = StringUtils.isBlank(runCountStr)?"-100": runCountStr;
-                            tube.dataVarAllRunCount = Double.valueOf(runCountStr).intValue();
-                        }
-                        tube.dataVarAllRunNoLef = Double.valueOf(MapUtil.getValueOrDefault(suffixMap, "DataVar@All@RunNoLef%Double", "-1")).intValue();
-                        tube.vacuumDoorPressure = MapUtil.getValueOrDefault( suffixMap, "Vacuum@Door@Pressure%Float", "-100");
-                        tube.dataVarAllRunTime = MapUtil.getValueOrDefault( suffixMap, "DataVar@All@RunTime%Double", "-1");
-                        tube.recipe = MapUtil.getValueOrDefault(suffixMap, "DataVar@All@Recipe%String", "");
-                        tube.timeSecond = defaultSdf.parse(tube.clock).getTime() / 1000;
-                        tube.ds = dsSdf.format(defaultSdf.parse(tube.clock));
-                        tube.testTime = tube.clock;
-                        tube.id = String.format("%s-%s", tube.eqpID, tube.tubeID);
-                        tube.rowkey = String.format("%s|%s", new StringBuffer(String.valueOf(tube.timeSecond)).reverse().toString(), tube.id);
-                        return tube;
-                    }
-                })
-                .name("df-map-jsonObject-to-DFTube2")
-                .uid("df-map-jsonObject-to-DFTube2");
-
-        List<String> columnFamily = Collections.unmodifiableList(Arrays.asList(
-                "main",
-                "info"
-        ));
-
-        List<String> setColumns = Collections.unmodifiableList(Arrays.asList(
-                "main:eqp_id",
-                "main:site",
-                "main:state",
-                "main:clock",
-                "main:tube_id",
-                "main:text1",
-                "main:text2",
-                "main:text3",
-                "main:text4",
-                "main:boat_id",
-                "main:gas_poci_bubb_leve",
-                "main:gas_n2_poci3_volume_act",
-                "main:gas_poci_bubb_temp_act",
-                "main:recipe",
-                "main:run_count",
-                "main:run_no_lef",
-                "main:vacuum_door_Pressure",
-                "main:run_time",
-                "main:time_second",
-                "main:test_time",
-                "main:end_time",
-                "main:ct",
-                "main:ds"
-        ));
-
-        // hbase中作为离线数据存储数据
-        SingleOutputStreamOperator<DFTuple<Tuple23>> offlineSos =  tubeChangeStateDS
-                .keyBy("id")
-                .map(new RichMapFunction<EqpCTSource2, DFTuple<Tuple23>>() {
-                    @Override
-                    public DFTuple<Tuple23> map(EqpCTSource2 v) throws Exception {
-                        return JobMain.packagingDFTuple(v);
-                    }
-                })
-                .name("df-map-DFTube2-to-DFTuple-offline")
-                .uid("df-map-DFTube2-to-DFTuple-offline");
-
-
-        // 输出离线数据存储
-        offlineSos
-                .addSink(new SinkHbase<>(offlineHbaseTable, columnFamily, setColumns))
-                .name("df-offline-save-to-hbase")
-                .uid("df-offline-save-to-hbase");
-
-        SingleOutputStreamOperator<EqpCTSource2> resultSos = tubeChangeStateDS
-                .keyBy("id")
-                .countWindow(2, 1)
-                .reduce(new ReduceFunction<EqpCTSource2>() {
-                    @Override
-                    public EqpCTSource2 reduce(EqpCTSource2 v1, EqpCTSource2 v2) throws Exception {
-                        if (!v2.dataVarAllRunCount.equals(v1.dataVarAllRunCount)) {
-                            // 重置状态值，若设置为1，则可利用本条数据和前一条数据进行计算，对于的end_time和ct时间可计算出
-                            v2.firstStatus = 0;
-                            // 若是顺序数据，不缺数据，则取run count变化这条数据,反之，缺数据，打标为非上一条数据结束时间
-                            if (v2.dataVarAllRunCount.equals(v1.dataVarAllRunCount + 1)) {
-                                v2.firstStatus = 1;
-                            } else if (v2.dataVarAllRunCount < (v1.dataVarAllRunCount + 1)) {
-                                return null;
-                            }
-                            return v2;
-                        }
-                        return null;
-                    }
-                })
-                .name("df-reduce-DFTube2-run-count-first")
-                .uid("df-reduce-DFTube2-run-count-first")
-                .filter((FilterFunction<EqpCTSource2>) v -> v != null)
-                .name("df-filter-DFTube2-not-null")
-                .uid("df-filter-DFTube2-not-null")
-                .keyBy("id")
-                .countWindow(2, 1)
-                .reduce(new ReduceFunction<EqpCTSource2>() {
-                    @Override
-                    public EqpCTSource2 reduce(EqpCTSource2 v1, EqpCTSource2 v2) throws Exception {
-                        if (v2.firstStatus == 1) {
-                            final SimpleDateFormat defaultSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            final SimpleDateFormat dsSdf = new SimpleDateFormat("yyyyMMdd");
-                            v1.endTime = defaultSdf.format(new Date(v1.timeSecond * 1000 + Double.valueOf(v2.dataVarAllRunTime).longValue() * 1000));
-                            v1.ct = Double.valueOf(v2.dataVarAllRunTime).longValue();
-                        }
+                    public EqpCTSource reduce(EqpCTSource v1, EqpCTSource v2) throws Exception {
+                        v1.output += v2.output;
+                        v1.output2 += v2.output2;
+                        v1.uoc += v2.uoc;
+                        v1.isc += v2.isc;
+                        v1.ff += v2.ff;
+                        v1.eta += v2.eta;
+                        v1.m3Eta += v2.m3Eta;
+                        v1.irev2 += v2.irev2;
+                        v1.rser += v2.rser;
+                        v1.rshunt += v2.rshunt;
+                        v1.tcell += v2.tcell;
+                        v1.tmonicell += v2.tmonicell;
+                        v1.insolM1 += v2.insolM1;
+                        v1.m3Insol += v2.m3Insol;
+                        v1.numA += v2.numA;
+                        v1.numZhengmianyichang += v2.numZhengmianyichang;
+                        v1.numBeimianyichang += v2.numBeimianyichang;
+                        v1.numYanseyichang += v2.numYanseyichang;
+                        v1.numYanseyichang2 += v2.numYanseyichang2;
+                        v1.numMo5 += v2.numMo5;
+                        v1.numIrev2 += v2.numIrev2;
+                        v1.numRsh += v2.numRsh;
+                        v1.numDx += v2.numDx;
+                        v1.numDuanshan += v2.numDuanshan;
+                        v1.numHuashang += v2.numHuashang;
+                        v1.numHeidian += v2.numHeidian;
+                        v1.numKexindu += v2.numKexindu;
+                        v1.numYinlie += v2.numYinlie;
+                        v1.numColorAll += v2.numColorAll;
+                        v1.numColorA += v2.numColorA;
+                        v1.numColorB += v2.numColorB;
+                        v1.numColorC += v2.numColorC;
+                        v1.numDsAll += v2.numDsAll;
+                        v1.numDs0 += v2.numDs0;
+                        v1.numDs1 += v2.numDs1;
+                        v1.numDs2 += v2.numDs2;
+                        v1.numDs3 += v2.numDs3;
+                        v1.numDs4 += v2.numDs4;
+                        v1.numDs5 += v2.numDs5;
+                        v1.numDs5p += v2.numDs5p;
+                        v1.num213 += v2.num213;
+                        v1.num214 += v2.num214;
+                        v1.num215 += v2.num215;
+                        v1.num216 += v2.num216;
+                        v1.num217 += v2.num217;
+                        v1.num218 += v2.num218;
+                        v1.num219 += v2.num219;
+                        v1.num220 += v2.num220;
+                        v1.num221 += v2.num221;
+                        v1.num222 += v2.num222;
+                        v1.num223 += v2.num223;
+                        v1.num224 += v2.num224;
+                        v1.num225 += v2.num225;
+                        v1.num226 += v2.num226;
+                        v1.num227 += v2.num227;
+                        v1.num228 += v2.num228;
+                        v1.num229 += v2.num229;
+                        v1.num230 += v2.num230;
+                        v1.num231 += v2.num231;
+                        v1.num232 += v2.num232;
+                        v1.num233 += v2.num233;
+                        v1.num234 += v2.num234;
+                        v1.num235 += v2.num235;
+                        v1.num236 += v2.num236;
+                        v1.num237 += v2.num237;
+                        v1.num238 += v2.num238;
+                        v1.num239 += v2.num239;
+                        v1.num240 += v2.num240;
                         return v1;
                     }
-                }).name("df-calculate-ct")
-                .uid("df-calculate-ct");
+                })
+                .name("eqp-ct-reduce-oee-halm-sum")
+                .uid("eqp-ct-reduce-oee-halm-sum");
 
         resultSos.print();
-        resultSos.map(new RichMapFunction<EqpCTSource2, DFTuple<Tuple23>>() {
+
+        resultSos.map(new RichMapFunction<EqpCTSource, Map<String, Object>>() {
             @Override
-            public DFTuple<Tuple23> map(EqpCTSource2 v) throws Exception {
-                return JobMain.packagingDFTuple(v);
+            public Map<String, Object> map(EqpCTSource v) throws Exception {
+                byte[] jsonBytes = mapper.writeValueAsBytes(v);
+                TypeReference ref = new TypeReference<HashMap<String, Object>>() {};
+                return mapper.readValue(jsonBytes, ref);
             }
-        }).name("df-map-DFTube2-to-DFTuple-online")
-          .uid("df-map-DFTube2-to-DFTuple-online")
-          .addSink(new SinkHbase<>(onLineHbaseTable, columnFamily, setColumns))
-          .name("df-online-save-to-hbase")
-          .uid("df-online-save-to-hbase");
+        }).name("EqpCTSource-to-map")
+            .uid("EqpCTSource-to-map")
+            .addSink(new CTSinkHBase(onLineHbaseTable))
+            .name("ct-online-save-to-hbase")
+            .uid("ct-online-save-to-hbase");
 
         logger.info("job start...");
         // 6.执行任务
         env.execute(parameterTool.get("job.name"));
-    }
-
-    public static DFTuple<Tuple23> packagingDFTuple(EqpCTSource2 v) throws Exception {
-        DFTuple<Tuple23> dfTuple = new DFTuple();
-        dfTuple.data = Tuple23.of(v.eqpID, v.site, v.state, v.clock, v.tubeID, v.text1, v.text2, v.text3, v.text4,
-                v.boatID, v.gasPOClBubbLeve, v.gasN2_POCl3VolumeAct, v.gasPOClBubbTempAct,
-                v.recipe, v.dataVarAllRunCount, v.dataVarAllRunNoLef, v.vacuumDoorPressure,
-                v.dataVarAllRunTime, v.timeSecond, v.testTime, v.endTime, v.ct, v.ds);
-        dfTuple.rowKey = v.rowkey;
-        return dfTuple;
     }
 }
