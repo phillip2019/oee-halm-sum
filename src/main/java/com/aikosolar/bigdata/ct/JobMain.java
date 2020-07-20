@@ -206,7 +206,17 @@ public class JobMain {
                 .setParallelism(3);
 
         // 5. 打印数据
-        SingleOutputStreamOperator<EqpCTSource> eqpCTSourceDS = kafkaDataStream.map(x -> {
+        SingleOutputStreamOperator<EqpCTSource> eqpCTSourceDS = kafkaDataStream
+            .map(s -> mapper.readTree(s))
+                .uid("str-to-jsonnode")
+                .name("str-to-jsonnode")
+            .filter(jn -> {
+                JsonNode jsData = jn.get("data");
+                String binComment = jsData.get("BIN_Comment").asText();
+                return StringUtils.isNotBlank(binComment) && !StringUtils.equalsIgnoreCase(binComment, "cc") && !StringUtils.equals(binComment, "BIN100");
+            }).uid("filter-bin_comment")
+              .name("filter-bin_comment")
+            .map(jn -> {
             //分区字段
             final SimpleDateFormat defaultSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             final SimpleDateFormat utcSdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
@@ -214,7 +224,6 @@ public class JobMain {
             final SimpleDateFormat hourSdf = new SimpleDateFormat("yyyy-MM-dd HH:00:00");
             final SimpleDateFormat hourSdf2 = new SimpleDateFormat("yyyy-MM-dd HH:30:00");
 
-            JsonNode jn = mapper.readTree(x);
             EqpCTSource eqpCTSource = new EqpCTSource();
             JsonNode jnData = jn.get("data");
             // 若没有上传eqp_id，则默认为HALM00A设备
