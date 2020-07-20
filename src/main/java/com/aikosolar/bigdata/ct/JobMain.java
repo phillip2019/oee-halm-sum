@@ -181,8 +181,6 @@ public class JobMain {
         final String etlSourceOffsetReset = parameterTool.get("job.etl.source.auto.offset.reset");
 
         final String onLineHbaseTable = parameterTool.get("job.online.hbase.table");
-        final String offlineHbaseTable = parameterTool.get("job.offline.hbase.table");
-//        final String offlineHbaseBackupTable = parameterTool.get("job.offline.backup.hbase.table");
 
         // 3. 创建Kafka数据流
         Properties kafkaConsumerProps = new Properties();
