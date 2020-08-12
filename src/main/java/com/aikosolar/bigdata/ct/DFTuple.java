@@ -1,6 +1,7 @@
 package com.aikosolar.bigdata.ct;
 
 
+import com.google.common.collect.ImmutableList;
 import org.apache.flink.api.java.tuple.Tuple;
 
 import java.io.Serializable;
@@ -32,5 +33,9 @@ public class DFTuple<T extends Tuple> implements Serializable {
         sb.append(", rowKey='").append(rowKey).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(ImmutableList.of(0, 100).stream().anyMatch(Integer.valueOf(0)::equals));
     }
 }

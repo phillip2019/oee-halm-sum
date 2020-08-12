@@ -1,5 +1,24 @@
 package com.aikosolar.bigdata.ct;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
+
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 /**
  * Created by jian.wang on 2019/8/12.
  */
@@ -64,14 +83,16 @@ public class JCache {
         }
     }
 
-    *//**
+    */
+  /**
      * 有重试的sadd 重试2次
      * @param pool
      * @param key
      * @param value
      * @param retry
      * @return
-     *//*
+     */
+    /*
     public static Long sadd(JedisResourcePool pool, String key, String value, int retry){
         Jedis jedis = null;
         if (!pool.isClosed()) {
@@ -141,4 +162,36 @@ public class JCache {
         }
 
     }*/
+
+    public static void main(String[] args) throws IOException {
+//        System.out.println(DigestUtils.md5Hex("abcd"));
+//        ObjectMapper mapper = new ObjectMapper();
+//        // 该特性决定了当遇到未知属性（没有映射到属性，没有任何setter或者任何可以处理它的handler），是否应该抛出一个JsonMappingException异常
+//        mapper.configure(SerializationFeature.FAIL_ON_UNWRAPPED_TYPE_IDENTIFIERS, false);
+//        //在序列化时日期格式默认为 yyyy-MM-dd'T'HH:mm:ss.SSSZ
+//        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+//        //在序列化时忽略值为 null 的属性
+//        mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+//        //忽略值为默认值的属性
+//        mapper.setDefaultPropertyInclusion(JsonInclude.Include.ALWAYS);
+//        //设置JSON时间格式
+//        mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+//        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+//        //对于日期类型为 java.time.LocalDate，还需要添加代码 mapper.registerModule(new JavaTimeModule())，同时添加相应的依赖 jar 包
+//        mapper.registerModule(new JavaTimeModule());
+////        TypeReference ref = new TypeReference<HashMap<String, Object>>() {};
+//        JsonNode jn = mapper.readTree("{\"a\": null}");
+//        ((ObjectNode) jn).put("b", "abc");
+//        System.out.println(StringUtils.equals(jn.path("a").asText(), "null"));
+//        System.out.println(mapper.writeValueAsString(jn));
+//
+//        System.out.println(org.apache.commons.lang3.StringUtils.capitalize("Z2-HALM01A"));
+
+//        java.net.URL[] urls = sun.misc.Launcher.getBootstrapClassPath().getURLs();
+//        for (int i = 0; i < urls.length; i++) {
+//            System.out.println(urls[i].toExternalForm());
+//        }
+
+        System.out.println(JobMain.ETA_GRADE_08_06_MAP);
+    }
 }

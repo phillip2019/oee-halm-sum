@@ -6,6 +6,7 @@ package com.aikosolar.bigdata.ct;
   */
 
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -16,9 +17,9 @@ import java.lang.reflect.Method;
 public class EqpCTSource implements Serializable {
 
   private static final long serialVersionUID = 1L;
-
-  public String rowKey = "";
+  public String rowkey = "";
   public String site = "Z2";
+  public String factory = "4";
   public String shift = "";
   public String dayDate = "";
   public String dayHour = "";
@@ -29,82 +30,89 @@ public class EqpCTSource implements Serializable {
   public String comments = "";
   public String orderType = "NORMAL";
   public String binType = "OTHER";
-  public Integer output = 1;
-  public Integer output2 = 0;
-  public Double uoc = 0D;
-  public Double isc = 0D;
-  public Double ff = 0D;
-  public Double eta = 0D;
-  public Double m3Eta = 0D;
-  public Double irev2 = 0D;
-  public Double rser = 0D;
-  public Double rshunt = 0D;
-  public Double tcell = 0D;
-  public Double tmonicell = 0D;
-  public Double insolM1 = 0D;
-  public Double m3Insol = 0D;
-  public Integer numA = 0;
-  public Integer numZhengmianyichang = 0;
-  public Integer numBeimianyichang = 0;
-  public Integer numYanseyichang = 0;
-  public Integer numYanseyichang2 = 0;
-  public Integer numMo5 = 0;
-  public Integer numIrev2 = 0;
-  public Integer numRsh = 0;
-  public Integer numDx = 0;
-  public Integer numDuanshan = 0;
-  public Integer numHuashang = 0;
-  public Integer numHeidian = 0;
-  public Integer numKexindu = 0;
-  public Integer numYinlie = 0;
-  public Integer numColorAll = 0;
-  public Integer numColorA = 0;
-  public Integer numColorB = 0;
-  public Integer numColorC = 0;
-  public Integer numDsAll = 0;
-  public Integer numDs0 = 0;
-  public Integer numDs1 = 0;
-  public Integer numDs2 = 0;
-  public Integer numDs3 = 0;
-  public Integer numDs4 = 0;
-  public Integer numDs5 = 0;
-  public Integer numDs5p = 0;
-  public Integer num213 = 0;
-  public Integer num214 = 0;
-  public Integer num215 = 0;
-  public Integer num216 = 0;
-  public Integer num217 = 0;
-  public Integer num218 = 0;
-  public Integer num219 = 0;
-  public Integer num220 = 0;
-  public Integer num221 = 0;
-  public Integer num222 = 0;
-  public Integer num223 = 0;
-  public Integer num224 = 0;
-  public Integer num225 = 0;
-  public Integer num226 = 0;
-  public Integer num227 = 0;
-  public Integer num228 = 0;
-  public Integer num229 = 0;
-  public Integer num230 = 0;
-  public Integer num231 = 0;
-  public Integer num232 = 0;
-  public Integer num233 = 0;
-  public Integer num234 = 0;
-  public Integer num235 = 0;
-  public Integer num236 = 0;
-  public Integer num237 = 0;
-  public Integer num238 = 0;
-  public Integer num239 = 0;
-  public Integer num240 = 0;
+  public String outputQty = "1";
+  public String outputQty2 = "0";
+  public String uoc = "0";
+  public String isc = "0";
+  public String ff = "0";
+  public String eta = "0";
+  public String m3Eta = "0";
+  public String irev2 = "0";
+  public String rser = "0";
+  public String rshunt = "0";
+  public String tcell = "0";
+  public String tmonicell = "0";
+  public String insolM1 = "0";
+  public String m3Insol = "0";
+  public String numA = "0";
+  public String numZhengmianyichang = "0";
+  public String numBeimianyichang = "0";
+  public String numYanseyichang = "0";
+  public String numYanseyichang2 = "0";
+  public String numMo5 = "0";
+  public String numIrev2 = "0";
+  public String numRsh = "0";
+  public String numDx = "0";
+  public String numDuanshan = "0";
+  public String numHuashang = "0";
+  public String numHeidian = "0";
+  public String numKexindu = "0";
+  public String numYinlie = "0";
+  public String numColorAll = "0";
+  public String numColorA = "0";
+  public String numColorB = "0";
+  public String numColorC = "0";
+  public String numDsAll = "0";
+  public String numDs_0 = "0";
+  public String numDs_1 = "0";
+  public String numDs_2 = "0";
+  public String numDs_3 = "0";
+  public String numDs_4 = "0";
+  public String numDs_5 = "0";
+  public String numDs_5p = "0";
+  public String num213 = "0";
+  public String num214 = "0";
+  public String num215 = "0";
+  public String num216 = "0";
+  public String num217 = "0";
+  public String num218 = "0";
+  public String num219 = "0";
+  public String num220 = "0";
+  public String num221 = "0";
+  public String num222 = "0";
+  public String num223 = "0";
+  public String num224 = "0";
+  public String num225 = "0";
+  public String num226 = "0";
+  public String num227 = "0";
+  public String num228 = "0";
+  public String num229 = "0";
+  public String num230 = "0";
+  public String num231 = "0";
+  public String num232 = "0";
+  public String num233 = "0";
+  public String num234 = "0";
+  public String num235 = "0";
+  public String num236 = "0";
+  public String num237 = "0";
+  public String num238 = "0";
+  public String num239 = "0";
+  public String num240 = "0";
 
-
-  public String getRowKey() {
-    return rowKey;
+  public String getRowkey() {
+    return rowkey;
   }
 
-  public void setRowKey(String rowKey) {
-    this.rowKey = rowKey;
+  public void setRowkey(String rowkey) {
+    this.rowkey = rowkey;
+  }
+
+  public String getFactory() {
+    return factory;
+  }
+
+  public void setFactory(String factory) {
+    this.factory = factory;
   }
 
   public String getSite() {
@@ -195,555 +203,557 @@ public class EqpCTSource implements Serializable {
     this.binType = binType;
   }
 
-  public Integer getOutput() {
-    return output;
+  public String getOutputQty() {
+    return outputQty;
   }
 
-  public void setOutput(Integer output) {
-    this.output = output;
+  public void setOutputQty(String outputQty) {
+    this.outputQty = outputQty;
   }
 
-  public Integer getOutput2() {
-    return output2;
+  public String getOutputQty2() {
+    return outputQty2;
   }
 
-  public void setOutput2(Integer output2) {
-    this.output2 = output2;
+  public void setOutputQty2(String outputQty2) {
+    this.outputQty2 = outputQty2;
   }
 
-  public Double getUoc() {
+
+  public String getUoc() {
     return uoc;
   }
 
-  public void setUoc(Double uoc) {
+  public void setUoc(String uoc) {
     this.uoc = uoc;
   }
 
-  public Double getIsc() {
+  public String getIsc() {
     return isc;
   }
 
-  public void setIsc(Double isc) {
+  public void setIsc(String isc) {
     this.isc = isc;
   }
 
-  public Double getFf() {
+  public String getFf() {
     return ff;
   }
 
-  public void setFf(Double ff) {
+  public void setFf(String ff) {
     this.ff = ff;
   }
 
-  public Double getEta() {
+  public String getEta() {
     return eta;
   }
 
-  public void setEta(Double eta) {
+  public void setEta(String eta) {
     this.eta = eta;
   }
 
-  public Double getM3Eta() {
+  public String getM3Eta() {
     return m3Eta;
   }
 
-  public void setM3Eta(Double m3Eta) {
+  public void setM3Eta(String m3Eta) {
     this.m3Eta = m3Eta;
   }
 
-  public Double getIrev2() {
+  public String getIrev2() {
     return irev2;
   }
 
-  public void setIrev2(Double irev2) {
+  public void setIrev2(String irev2) {
     this.irev2 = irev2;
   }
 
-  public Double getRser() {
+  public String getRser() {
     return rser;
   }
 
-  public void setRser(Double rser) {
+  public void setRser(String rser) {
     this.rser = rser;
   }
 
-  public Double getRshunt() {
+  public String getRshunt() {
     return rshunt;
   }
 
-  public void setRshunt(Double rshunt) {
+  public void setRshunt(String rshunt) {
     this.rshunt = rshunt;
   }
 
-  public Double getTcell() {
+  public String getTcell() {
     return tcell;
   }
 
-  public void setTcell(Double tcell) {
+  public void setTcell(String tcell) {
     this.tcell = tcell;
   }
 
-  public Double getTmonicell() {
+  public String getTmonicell() {
     return tmonicell;
   }
 
-  public void setTmonicell(Double tmonicell) {
+  public void setTmonicell(String tmonicell) {
     this.tmonicell = tmonicell;
   }
 
-  public Double getInsolM1() {
+  public String getInsolM1() {
     return insolM1;
   }
 
-  public void setInsolM1(Double insolM1) {
+  public void setInsolM1(String insolM1) {
     this.insolM1 = insolM1;
   }
 
-  public Double getM3Insol() {
+  public String getM3Insol() {
     return m3Insol;
   }
 
-  public void setM3Insol(Double m3Insol) {
+  public void setM3Insol(String m3Insol) {
     this.m3Insol = m3Insol;
   }
 
-  public Integer getNumA() {
+  public String getNumA() {
     return numA;
   }
 
-  public void setNumA(Integer numA) {
+  public void setNumA(String numA) {
     this.numA = numA;
   }
 
-  public Integer getNumZhengmianyichang() {
+  public String getNumZhengmianyichang() {
     return numZhengmianyichang;
   }
 
-  public void setNumZhengmianyichang(Integer numZhengmianyichang) {
+  public void setNumZhengmianyichang(String numZhengmianyichang) {
     this.numZhengmianyichang = numZhengmianyichang;
   }
 
-  public Integer getNumBeimianyichang() {
+  public String getNumBeimianyichang() {
     return numBeimianyichang;
   }
 
-  public void setNumBeimianyichang(Integer numBeimianyichang) {
+  public void setNumBeimianyichang(String numBeimianyichang) {
     this.numBeimianyichang = numBeimianyichang;
   }
 
-  public Integer getNumYanseyichang() {
+  public String getNumYanseyichang() {
     return numYanseyichang;
   }
 
-  public void setNumYanseyichang(Integer numYanseyichang) {
+  public void setNumYanseyichang(String numYanseyichang) {
     this.numYanseyichang = numYanseyichang;
   }
 
-  public Integer getNumYanseyichang2() {
+  public String getNumYanseyichang2() {
     return numYanseyichang2;
   }
 
-  public void setNumYanseyichang2(Integer numYanseyichang2) {
+  public void setNumYanseyichang2(String numYanseyichang2) {
     this.numYanseyichang2 = numYanseyichang2;
   }
 
-  public Integer getNumMo5() {
+  public String getNumMo5() {
     return numMo5;
   }
 
-  public void setNumMo5(Integer numMo5) {
+  public void setNumMo5(String numMo5) {
     this.numMo5 = numMo5;
   }
 
-  public Integer getNumIrev2() {
+  public String getNumIrev2() {
     return numIrev2;
   }
 
-  public void setNumIrev2(Integer numIrev2) {
+  public void setNumIrev2(String numIrev2) {
     this.numIrev2 = numIrev2;
   }
 
-  public Integer getNumRsh() {
+  public String getNumRsh() {
     return numRsh;
   }
 
-  public void setNumRsh(Integer numRsh) {
+  public void setNumRsh(String numRsh) {
     this.numRsh = numRsh;
   }
 
-  public Integer getNumDx() {
+  public String getNumDx() {
     return numDx;
   }
 
-  public void setNumDx(Integer numDx) {
+  public void setNumDx(String numDx) {
     this.numDx = numDx;
   }
 
-  public Integer getNumDuanshan() {
+  public String getNumDuanshan() {
     return numDuanshan;
   }
 
-  public void setNumDuanshan(Integer numDuanshan) {
+  public void setNumDuanshan(String numDuanshan) {
     this.numDuanshan = numDuanshan;
   }
 
-  public Integer getNumHuashang() {
+  public String getNumHuashang() {
     return numHuashang;
   }
 
-  public void setNumHuashang(Integer numHuashang) {
+  public void setNumHuashang(String numHuashang) {
     this.numHuashang = numHuashang;
   }
 
-  public Integer getNumHeidian() {
+  public String getNumHeidian() {
     return numHeidian;
   }
 
-  public void setNumHeidian(Integer numHeidian) {
+  public void setNumHeidian(String numHeidian) {
     this.numHeidian = numHeidian;
   }
 
-  public Integer getNumKexindu() {
+  public String getNumKexindu() {
     return numKexindu;
   }
 
-  public void setNumKexindu(Integer numKexindu) {
+  public void setNumKexindu(String numKexindu) {
     this.numKexindu = numKexindu;
   }
 
-  public Integer getNumYinlie() {
+  public String getNumYinlie() {
     return numYinlie;
   }
 
-  public void setNumYinlie(Integer numYinlie) {
+  public void setNumYinlie(String numYinlie) {
     this.numYinlie = numYinlie;
   }
 
-  public Integer getNumColorAll() {
+  public String getNumColorAll() {
     return numColorAll;
   }
 
-  public void setNumColorAll(Integer numColorAll) {
+  public void setNumColorAll(String numColorAll) {
     this.numColorAll = numColorAll;
   }
 
-  public Integer getNumColorA() {
+  public String getNumColorA() {
     return numColorA;
   }
 
-  public void setNumColorA(Integer numColorA) {
+  public void setNumColorA(String numColorA) {
     this.numColorA = numColorA;
   }
 
-  public Integer getNumColorB() {
+  public String getNumColorB() {
     return numColorB;
   }
 
-  public void setNumColorB(Integer numColorB) {
+  public void setNumColorB(String numColorB) {
     this.numColorB = numColorB;
   }
 
-  public Integer getNumColorC() {
+  public String getNumColorC() {
     return numColorC;
   }
 
-  public void setNumColorC(Integer numColorC) {
+  public void setNumColorC(String numColorC) {
     this.numColorC = numColorC;
   }
 
-  public Integer getNumDsAll() {
+  public String getNumDsAll() {
     return numDsAll;
   }
 
-  public void setNumDsAll(Integer numDsAll) {
+  public void setNumDsAll(String numDsAll) {
     this.numDsAll = numDsAll;
   }
 
-  public Integer getNumDs0() {
-    return numDs0;
+  public String getNumDs_0() {
+    return numDs_0;
   }
 
-  public void setNumDs0(Integer numDs0) {
-    this.numDs0 = numDs0;
+  public void setNumDs_0(String numDs0) {
+    this.numDs_0 = numDs0;
   }
 
-  public Integer getNumDs1() {
-    return numDs1;
+  public String getNumDs_1() {
+    return numDs_1;
   }
 
-  public void setNumDs1(Integer numDs1) {
-    this.numDs1 = numDs1;
+  public void setNumDs_1(String numDs_1) {
+    this.numDs_1 = numDs_1;
   }
 
-  public Integer getNumDs2() {
-    return numDs2;
+  public String getNumDs_2() {
+    return numDs_2;
   }
 
-  public void setNumDs2(Integer numDs2) {
-    this.numDs2 = numDs2;
+  public void setNumDs_2(String numDs2) {
+    this.numDs_2 = numDs2;
   }
 
-  public Integer getNumDs3() {
-    return numDs3;
+  public String getNumDs_3() {
+    return numDs_3;
   }
 
-  public void setNumDs3(Integer numDs3) {
-    this.numDs3 = numDs3;
+  public void setNumDs_3(String numDs_3) {
+    this.numDs_3 = numDs_3;
   }
 
-  public Integer getNumDs4() {
-    return numDs4;
+  public String getNumDs_4() {
+    return numDs_4;
   }
 
-  public void setNumDs4(Integer numDs4) {
-    this.numDs4 = numDs4;
+  public void setNumDs_4(String numDs_4) {
+    this.numDs_4 = numDs_4;
   }
 
-  public Integer getNumDs5() {
-    return numDs5;
+  public String getNumDs_5() {
+    return numDs_5;
   }
 
-  public void setNumDs5(Integer numDs5) {
-    this.numDs5 = numDs5;
+  public void setNumDs_5(String numDs_5) {
+    this.numDs_5 = numDs_5;
   }
 
-  public Integer getNumDs5p() {
-    return numDs5p;
+  public String getNumDs_5p() {
+    return numDs_5p;
   }
 
-  public void setNumDs5p(Integer numDs5p) {
-    this.numDs5p = numDs5p;
+  public void setNumDs_5p(String numDs_5p) {
+    this.numDs_5p = numDs_5p;
   }
 
-  public Integer getNum213() {
+  public String getNum213() {
     return num213;
   }
 
-  public void setNum213(Integer num213) {
+  public void setNum213(String num213) {
     this.num213 = num213;
   }
 
-  public Integer getNum214() {
+  public String getNum214() {
     return num214;
   }
 
-  public void setNum214(Integer num214) {
+  public void setNum214(String num214) {
     this.num214 = num214;
   }
 
-  public Integer getNum215() {
+  public String getNum215() {
     return num215;
   }
 
-  public void setNum215(Integer num215) {
+  public void setNum215(String num215) {
     this.num215 = num215;
   }
 
-  public Integer getNum216() {
+  public String getNum216() {
     return num216;
   }
 
-  public void setNum216(Integer num216) {
+  public void setNum216(String num216) {
     this.num216 = num216;
   }
 
-  public Integer getNum217() {
+  public String getNum217() {
     return num217;
   }
 
-  public void setNum217(Integer num217) {
+  public void setNum217(String num217) {
     this.num217 = num217;
   }
 
-  public Integer getNum218() {
+  public String getNum218() {
     return num218;
   }
 
-  public void setNum218(Integer num218) {
+  public void setNum218(String num218) {
     this.num218 = num218;
   }
 
-  public Integer getNum219() {
+  public String getNum219() {
     return num219;
   }
 
-  public void setNum219(Integer num219) {
+  public void setNum219(String num219) {
     this.num219 = num219;
   }
 
-  public Integer getNum220() {
+  public String getNum220() {
     return num220;
   }
 
-  public void setNum220(Integer num220) {
+  public void setNum220(String num220) {
     this.num220 = num220;
   }
 
-  public Integer getNum221() {
+  public String getNum221() {
     return num221;
   }
 
-  public void setNum221(Integer num221) {
+  public void setNum221(String num221) {
     this.num221 = num221;
   }
 
-  public Integer getNum222() {
+  public String getNum222() {
     return num222;
   }
 
-  public void setNum222(Integer num222) {
+  public void setNum222(String num222) {
     this.num222 = num222;
   }
 
-  public Integer getNum223() {
+  public String getNum223() {
     return num223;
   }
 
-  public void setNum223(Integer num223) {
+  public void setNum223(String num223) {
     this.num223 = num223;
   }
 
-  public Integer getNum224() {
+  public String getNum224() {
     return num224;
   }
 
-  public void setNum224(Integer num224) {
+  public void setNum224(String num224) {
     this.num224 = num224;
   }
 
-  public Integer getNum225() {
+  public String getNum225() {
     return num225;
   }
 
-  public void setNum225(Integer num225) {
+  public void setNum225(String num225) {
     this.num225 = num225;
   }
 
-  public Integer getNum226() {
+  public String getNum226() {
     return num226;
   }
 
-  public void setNum226(Integer num226) {
+  public void setNum226(String num226) {
     this.num226 = num226;
   }
 
-  public Integer getNum227() {
+  public String getNum227() {
     return num227;
   }
 
-  public void setNum227(Integer num227) {
+  public void setNum227(String num227) {
     this.num227 = num227;
   }
 
-  public Integer getNum228() {
+  public String getNum228() {
     return num228;
   }
 
-  public void setNum228(Integer num228) {
+  public void setNum228(String num228) {
     this.num228 = num228;
   }
 
-  public Integer getNum229() {
+  public String getNum229() {
     return num229;
   }
 
-  public void setNum229(Integer num229) {
+  public void setNum229(String num229) {
     this.num229 = num229;
   }
 
-  public Integer getNum230() {
+  public String getNum230() {
     return num230;
   }
 
-  public void setNum230(Integer num230) {
+  public void setNum230(String num230) {
     this.num230 = num230;
   }
 
-  public Integer getNum231() {
+  public String getNum231() {
     return num231;
   }
 
-  public void setNum231(Integer num231) {
+  public void setNum231(String num231) {
     this.num231 = num231;
   }
 
-  public Integer getNum232() {
+  public String getNum232() {
     return num232;
   }
 
-  public void setNum232(Integer num232) {
+  public void setNum232(String num232) {
     this.num232 = num232;
   }
 
-  public Integer getNum233() {
+  public String getNum233() {
     return num233;
   }
 
-  public void setNum233(Integer num233) {
+  public void setNum233(String num233) {
     this.num233 = num233;
   }
 
-  public Integer getNum234() {
+  public String getNum234() {
     return num234;
   }
 
-  public void setNum234(Integer num234) {
+  public void setNum234(String num234) {
     this.num234 = num234;
   }
 
-  public Integer getNum235() {
+  public String getNum235() {
     return num235;
   }
 
-  public void setNum235(Integer num235) {
+  public void setNum235(String num235) {
     this.num235 = num235;
   }
 
-  public Integer getNum236() {
+  public String getNum236() {
     return num236;
   }
 
-  public void setNum236(Integer num236) {
+  public void setNum236(String num236) {
     this.num236 = num236;
   }
 
-  public Integer getNum237() {
+  public String getNum237() {
     return num237;
   }
 
-  public void setNum237(Integer num237) {
+  public void setNum237(String num237) {
     this.num237 = num237;
   }
 
-  public Integer getNum238() {
+  public String getNum238() {
     return num238;
   }
 
-  public void setNum238(Integer num238) {
+  public void setNum238(String num238) {
     this.num238 = num238;
   }
 
-  public Integer getNum239() {
+  public String getNum239() {
     return num239;
   }
 
-  public void setNum239(Integer num239) {
+  public void setNum239(String num239) {
     this.num239 = num239;
   }
 
-  public Integer getNum240() {
+  public String getNum240() {
     return num240;
   }
 
-  public void setNum240(Integer num240) {
+  public void setNum240(String num240) {
     this.num240 = num240;
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("EqpCTSource{");
-    sb.append("rowKey='").append(rowKey).append('\'');
+    sb.append("rowkey='").append(rowkey).append('\'');
     sb.append("site='").append(site).append('\'');
+    sb.append("factory='").append(factory).append('\'');
     sb.append(", shift='").append(shift).append('\'');
     sb.append(", dayDate='").append(dayDate).append('\'');
     sb.append(", dayHour='").append(dayHour).append('\'');
@@ -754,8 +764,8 @@ public class EqpCTSource implements Serializable {
     sb.append(", comments='").append(comments).append('\'');
     sb.append(", orderType='").append(orderType).append('\'');
     sb.append(", binType='").append(binType).append('\'');
-    sb.append(", output=").append(output);
-    sb.append(", output2=").append(output2);
+    sb.append(", output=").append(outputQty);
+    sb.append(", output2=").append(outputQty2);
     sb.append(", uoc=").append(uoc);
     sb.append(", isc=").append(isc);
     sb.append(", ff=").append(ff);
@@ -787,13 +797,13 @@ public class EqpCTSource implements Serializable {
     sb.append(", numColorB=").append(numColorB);
     sb.append(", numColorC=").append(numColorC);
     sb.append(", numDsAll=").append(numDsAll);
-    sb.append(", numDs0=").append(numDs0);
-    sb.append(", numDs1=").append(numDs1);
-    sb.append(", numDs2=").append(numDs2);
-    sb.append(", numDs3=").append(numDs3);
-    sb.append(", numDs4=").append(numDs4);
-    sb.append(", numDs5=").append(numDs5);
-    sb.append(", numDs5p=").append(numDs5p);
+    sb.append(", numDs0=").append(numDs_0);
+    sb.append(", numDs1=").append(numDs_1);
+    sb.append(", numDs2=").append(numDs_2);
+    sb.append(", numDs3=").append(numDs_3);
+    sb.append(", numDs4=").append(numDs_4);
+    sb.append(", numDs5=").append(numDs_5);
+    sb.append(", numDs5p=").append(numDs_5p);
     sb.append(", num213=").append(num213);
     sb.append(", num214=").append(num214);
     sb.append(", num215=").append(num215);
@@ -827,6 +837,6 @@ public class EqpCTSource implements Serializable {
   }
 
   public static void main(String[] args) throws NoSuchMethodException {
-    Method m = EqpCTSource.class.getDeclaredMethod(String.format("set%s", StringUtils.capitalize("num240")), Integer.class);
+    Method m = EqpCTSource.class.getDeclaredMethod(String.format("set%s", StringUtils.capitalize("num240")), String.class);
   }
 }

@@ -6,7 +6,7 @@
 
     <groupId>com.aikosolar.bigdata</groupId>
     <artifactId>oee-halm-sum</artifactId>
-    <version>0.1</version>
+    <version>1.3</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -26,9 +26,9 @@
         <streaming-common.version>0.1-SNAPSHOT</streaming-common.version>
         <hadoop.version>2.7.5</hadoop.version>
         <hbase.version>2.0.0</hbase.version>
-        <jar-scope>compile</jar-scope>
+<!--        <jar-scope>compile</jar-scope>-->
         <main.class>com.aikosolar.bigdata.ct.JobMain</main.class>
-<!--        <jar-scope>provided</jar-scope>-->
+        <jar-scope>provided</jar-scope>
     </properties>
     <repositories>
         <repository>
@@ -125,7 +125,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka-0.10_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-kafka-0.11_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
@@ -356,6 +356,12 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google.common</pattern>
+                                    <shadedPattern>com.google.mycommon</shadedPattern>
+                                </relocation>
+                            </relocations>
                             <artifactSet>
                                 <excludes>
                                     <exclude>org.apache.flink:force-shading</exclude>

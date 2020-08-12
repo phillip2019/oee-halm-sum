@@ -4,6 +4,7 @@ import com.aikosolar.bigdata.ct.hbase.FactoryConnect;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
@@ -47,6 +48,8 @@ public class CTSinkHBase extends RichSinkFunction<Map<String, Object>> {
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
         conn = FactoryConnect.getConnection();
+        Admin admin = conn.getAdmin();
+        final TableName tableName1 = TableName.valueOf(tableName);
     }
 
     /**
@@ -56,16 +59,17 @@ public class CTSinkHBase extends RichSinkFunction<Map<String, Object>> {
     @Override
     public void invoke(Map<String, Object> value, Context context) throws Exception {
         Table table = FactoryConnect.getConnection().getTable(TableName.valueOf(tableName));
-        Put put = new Put(Bytes.toBytes(value.get("row_key").toString()));
+        Put put = new Put(Bytes.toBytes(value.get("rowkey").toString()));
         Long timeStamp = Instant.now().toEpochMilli();
         for (Map.Entry<String, Object> entry : value.entrySet()) {
             String key = entry.getKey();
             Object v = entry.getValue();
-            put.addColumn(Bytes.toBytes(String.format("cf:%s", key)), Bytes.toBytes(key), timeStamp, Bytes.toBytes(v.toString()));
+            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes(key), timeStamp, Bytes.toBytes(v.toString()));
         }
         try {
             table.put(put);
         } catch (IOException e) {
+            logger.error("存放失败", e);
             throw new RuntimeException("存放失败", e);
         }
     }
