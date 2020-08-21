@@ -489,7 +489,7 @@ public class JobMain {
             }
 
             String binComment = jnData.path("BIN_Comment").asText();
-            if (StringUtils.equalsIgnoreCase(binComment, "null")) {
+            if (StringUtils.equalsIgnoreCase(binComment, "null") || StringUtils.isBlank(binComment)) {
                 eqpCTSource.numA = "1";
             } else if (StringUtils.equalsIgnoreCase(binComment, "zhengmianyichang")) {
                 eqpCTSource.numZhengmianyichang = "1";
